@@ -1,9 +1,10 @@
 import requests
 import csv
 from s3 import S3BucketConnector
+from io import StringIO
 
 class Levels_ETL:
-    def __init__(self,s3_bucket=S3BucketConnector):
+    def __init__(self,s3_bucket=S3BucketConnector()):
         self.locations={'New York','Jersey City','Los Angeles','Irvine','San Francisco','Seattle','Bellevue',
         'Redmond','San Jose','Sunnyvale','Mountain View','Santa Clara','Palo Alto','Redwood City','Los Gatos',
         'Cupertino','Chicago','Dallas','Miami','Philadelphia','Atlanta','Phoenix','Boston','Cambridge','Houston',
@@ -14,6 +15,7 @@ class Levels_ETL:
         self.s3_bucket=s3_bucket
     
     def extract(self):
+        ''' Extract data for specified locations from levels.fyi salaryData.json url to S3 staging area in CSV format'''
         job_data=requests.get('https://www.levels.fyi/js/salaryData.json').json()
         with open('job_data.csv','w',newline='') as file:
             writer=csv.writer(file)
@@ -24,4 +26,5 @@ class Levels_ETL:
                     writer.writerow([job['timestamp'],job['company'],job['title'],job['level'],job['tag'],
                     job['gender'],job['yearsofexperience'],job['yearsatcompany'],job['basesalary'],
                     job['stockgrantvalue'],job['bonus']])
+        self.s3_bucket._bucket.put_object(Body='job_data.csv',Key='job_data.csv')
 
