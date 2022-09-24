@@ -55,3 +55,4 @@ all_locations=[{"timestamp": "6/7/2017 11:33:27", "company": "Oracle", "level": 
 {"timestamp": "6/7/2017 11:33:27", "company": "Oracle", "level": "L3", "title": "Product Manager", "totalyearlycompensation": "186", "location": "Phoenix, AZ", "yearsofexperience": "1", "yearsatcompany": "1", "tag": "", "basesalary": "160", "stockgrantvalue": "17", "bonus": "9", "gender": "", "otherdetails": "", "cityid": "7392", "dmaid": "807", "rowNumber": 1}]
 
 
+

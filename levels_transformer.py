@@ -1,5 +1,6 @@
 import requests
 import csv
+import pandas as pd
 from s3 import S3BucketConnector
 from io import StringIO
 
@@ -26,6 +27,13 @@ class Levels_ETL:
                     writer.writerow([job['timestamp'],job['company'],job['title'],job['level'],job['tag'],
                     job['gender'],job['location'],job['yearsofexperience'],job['yearsatcompany'],job['basesalary'],
                     job['stockgrantvalue'],job['bonus']])
-        self.s3_bucket._bucket.put_object(Body='job_data.csv',Key='job_data.csv')
+        self.s3_bucket._bucket.upload_file(Filename=r'job_data.csv',Key='job_data.csv')
+    
+    def transform_dates(self,key='job_data.csv'):
+        '''Transform timestamp from job_data.csv into date_csv with date_key, year, month and quarter'''
+        csv_jobdata=self.s3_bucket._bucket.Object(key).get().get('Body').read.decode('UTF-8')
+        job_data_df=pd.read_csv(csv_jobdata)
+
+
 
 

@@ -8,7 +8,7 @@ from moto import mock_s3
 import requests
 from s3 import S3BucketConnector
 from levels_transformer import Levels_ETL
-from all_locations_data_test import all_locations
+from locations_data_test import all_locations
 
 @pytest.fixture
 def levels_etl_setup():
@@ -43,13 +43,11 @@ def test_extract_all_locations(requests_mock,levels_etl_setup):
                 writer.writerow([job['timestamp'],job['company'],job['title'],job['level'],job['tag'],
                 job['gender'],job['location'],job['yearsofexperience'],job['yearsatcompany'],job['basesalary'],
                 job['stockgrantvalue'],job['bonus']])
-    levels_etl_setup.s3_bucket._bucket.put_object(Body='job_data.csv',Key='job_data.csv')
-    csv_obj=levels_etl_setup.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
-    data=pd.read_csv(StringIO(csv_obj))
-    print(data.head())
-    assert len(data)==56
-
-
+    levels_etl_setup.s3_bucket._bucket.upload_file(Filename=r'job_data.csv',Key='job_data.csv')
+    csv_jobdata=levels_etl_setup.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
+    data=pd.read_csv(StringIO(csv_jobdata))
+    assert len(data)==len(test_data)
+    os.remove('job_data.csv')
 
 
 
