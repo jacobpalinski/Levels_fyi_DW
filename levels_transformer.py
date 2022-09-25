@@ -3,6 +3,7 @@ import csv
 import pandas as pd
 from s3 import S3BucketConnector
 from io import StringIO
+from datetime import datetime
 
 class Levels_ETL:
     def __init__(self,s3_bucket=S3BucketConnector):
@@ -32,7 +33,37 @@ class Levels_ETL:
     def transform_dates(self,key='job_data.csv'):
         '''Transform timestamp from job_data.csv into date_csv with date_key, year, month and quarter'''
         csv_jobdata=self.s3_bucket._bucket.Object(key).get().get('Body').read.decode('UTF-8')
-        job_data_df=pd.read_csv(csv_jobdata)
+        job_data_df=pd.read_csv(StringIO(csv_jobdata))
+        #Extract date from timestamp
+        date_df=job_data_df['timestamp']
+        date_df['Date']=pd.to_datetime(date_df['Date'],format='%y%m%d')
+        #Extract year from date
+        date_df['Year']=date_df['Date'].dt.year
+        #Extract month from date
+        date_df['Month']=date_df['Date'].dt.month
+        #Exrtact quarter from date
+        date_df['Quarter']=date_df['Date'].dt.quarter
+        out_buffer=StringIO()
+        date_df.to_csv(out_buffer,index=False)
+        self.s3_bucket._bucket.put_object(Body=out_buffer.getvalue(),Key='date.csv')
+    
+    def transform_job_details(self,key='job_data.csv'):
+        '''Create csv containing company name, title, specialisation and level associated with each data point'''
+        csv_jobdata=self.s3_bucket._bucket.Object(key).get().get('Body').read.decode('UTF-8')
+        job_data_df=pd.read_csv(StringIO(csv_jobdata))
+        job_details_df=job_data_df[['company','title','tag','level']]
+        # Rename columns
+        job_details_df.rename(columns={'company':'Company','title':'Title','tag':'Specialisation','level':'Level'})
+        # Dealing with null company names
+        job_details_df['Company']=job_details_df['Company'].replace('','Not Specified')
+        # Dealing with null specialisations
+        job_details_df['Specialisation']=job_details_df['Specialisation'].replace('','Not Specified')
+        # Dealing with null levels
+        job_details_df['']
+
+
+
+
 
 
 
