@@ -32,8 +32,8 @@ class Levels_ETL:
     
     def transform_dates(self,key='job_data.csv'):
         '''Transform timestamp from job_data.csv into date_csv with date_key, year, month and quarter'''
-        csv_jobdata=self.s3_bucket._bucket.Object(key).get().get('Body').read.decode('UTF-8')
-        job_data_df=pd.read_csv(StringIO(csv_jobdata))
+        # Dataframe
+        job_data_df=self.s3_bucket.read_csv_to_df(key=key)
         # Extract date from timestamp
         date_df=job_data_df['timestamp']
         date_df['Date']=pd.to_datetime(date_df['timestamp'],format='%y%m%d')
@@ -45,14 +45,12 @@ class Levels_ETL:
         date_df['Quarter']=date_df['Date'].dt.quarter
         # Drop timestamp since longer needed
         date_df.drop('timestamp',axis=1,inplace=True)
-        out_buffer=StringIO()
-        date_df.to_csv(out_buffer,index=False)
-        self.s3_bucket._bucket.put_object(Body=out_buffer.getvalue(),Key='date.csv')
+        # Write Dataframe to S3
+        self.s3_bucket.write_df_to_s3(date_df,'date.csv')
     
     def transform_job_details(self,key='job_data.csv'):
         '''Create csv containing company name, title, specialisation and level associated with each data point'''
-        csv_jobdata=self.s3_bucket._bucket.Object(key).get().get('Body').read.decode('UTF-8')
-        job_data_df=pd.read_csv(StringIO(csv_jobdata))
+        job_data_df=self.s3_bucket.read_csv_to_df(key=key)
         job_details_df=job_data_df[['company','title','tag','level']]
         # Dealing with empty values
         job_details_df['company','title','tag','level']=job_details_df[['company','title','tag','level']].replace(
@@ -78,12 +76,30 @@ class Levels_ETL:
         'Specialisation']='AR/VR'
         job_details_df.loc[job_details_df['Specialisation'].str.contains('virtual reality',case=False),
         'Specialisation']='AR/VR'
-        # Replace 'Web Development (front-end) with 'Front End Development'
+        # Replace 'front-end' with 'Front End Development'
+        job_details_df.loc[job_details_df['Specialisation'].str.contains('front-end',case=False),
+        'Specialisation']='Front-End Development'
+        # Convert 'backend' into 'API Development (Back-End)'
+        job_details_df.loc[job_details_df['Specialisation'].str.contains('backend',case=False),
+        'Specialisation']='API Development (Back-End)'
+        # Convert variations of algorithms and algorithm engineer into 'Algorithm'
+        job_details_df.loc[job_details_df['Specialisation'].str.contains('algorithms',case=False),
+        'Specialisation']='Algorithm'
+        job_details_df.loc[job_details_df['Specialisation'].str.contains('algorithm',case=False),
+        'Specialisation']='Algorithm'
         # Replace 'user experience' and 'user interface' with 'UX/UI'
         job_details_df.loc[job_details_df['Specialisation'].str.contains('user experience',case=False),
         'Specialisation']='UX/UI'
         job_details_df.loc[job_details_df['Specialisation'].str.contains('user interface',case=False),
         'Specialisation']='UX/UI'
+        # Title all columns
+        job_details_df['Company']=job_details_df['Company'].str.title()
+        job_details_df['Title']=job_details_df['Title'].str.title()
+        job_details_df['Specialisation']=job_details_df['Specialisation'].str.title()
+        job_details_df['Level']=job_details_df['Level'].str.title()
+        # Write Dataframe to S3
+        self.s3_bucket.write_df_to_s3(job_details_df,'job_details.csv')
+
 
 
 
