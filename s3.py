@@ -12,7 +12,7 @@ class S3BucketConnector:
         self._bucket=self._s3.Bucket(bucket)
     
     def read_csv_to_df(self,key):
-        csv_obj=self._bucket.Object(key).get().get('Body').read.decode('UTF-8')
+        csv_obj=self._bucket.Object(key).get().get('Body').read().decode('UTF-8')
         dataframe=pd.read_csv(StringIO(csv_obj))
         return dataframe
 
