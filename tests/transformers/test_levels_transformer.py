@@ -32,6 +32,50 @@ def levels_etl():
     # Teardown
     mock_bucket.stop()
 
+@pytest.fixture
+def levels_etl_with_test_csv_data(tmpdir_factory,levels_etl):
+    filename=str(tmpdir_factory.mktemp('data').join('test_data.csv'))
+    with open(filename,'w',encoding='UTF-8',newline='') as file:
+        writer=csv.writer(file)
+        writer.writerow(['date','company','location','title','level','specialisation','gender',
+        'years_of_experience','years_at_company','base_salary','stock','bonus'])
+        writer.writerows([['1/1/2017 11:33:27','Google','Sunnyvale, CA','Software Engineer','L3','android',
+        'male','1','0','120000','40000','15000'],
+        ['4/20/2017 11:33:27','Apple','Austin, TX','Software Engineer','ICT2','iOS Development','female','1','0',
+        '90','30','20'],
+        ['4/20/2017 11:33:27','Microsoft','Bellevue, WA','Product Manager','59','UX/UI','Male','0','0','0','0','0'],
+        ['7/15/2017 11:33:27','Hubspot','Cambridge, MA, United States','Software Engineer','Junior',
+        'Site Reliability (SRE)','','','','135','5','0'],
+        ['10/11/2017 11:33:27','Facebook','Menlo Park, CA','Software Engineer','E5','production','male',
+        '11','2','215','100','40'],
+        ['12/11/2017 11:33:27','spotify','New York, NY','Software Engineer','Engineer 1','fullstack developer','male',
+        '4','0','180','37.5','0'],
+        ['1/30/2018 11:33:27','Intel','Santa Clara, CA','Software Engineer','grade 9','augmented reality','male',
+        '20','5','204','50','20'],
+        ['1/30/2018 11:33:27','Intel','Santa Clara, CA','Software Engineer','grade 9','virtual reality','male',
+        '20','5','204','50','20'],
+        ['3/30/2018 11:33:27','Netflix','Denver, CO','Software Engineer','E5','Web Development (front-end)','male',
+        '20','2','591','0','0'],
+        ['4/7/2018 11:33:27','Sony Interactive Entertainment','San Francisco, CA','Software Engineer','L4',
+        'backend tools','male','6','6','103','5','32'],
+        ['5/9/2018 11:33:27','Lyft','New York, NY','Data Scientist','t6','algorithms','male',
+        '6','3','200','200','0'],
+        ['11/11/2018 11:33:27','Hudson River Trading','New York, NY','Software Engineer','L4',
+        'algorithm','male','6','4','431','0','1700'],
+        ['4/7/2019 11:33:27','Facebook','Chicago, IL','Product Designer','IC4',
+        'user experience','female','7','0','143','40','22.7'],
+        ['4/7/2019 11:33:27','Facebook','New York, NY','Product Designer','IC4',
+        'ux','female','7','2','173','40','0'],
+        ['4/7/2019 11:33:27','Mango Voice','Salt Lake City, UT','Product Designer','l3',
+        'ui','female','5','3','74.5','0','0'],
+        ['9/13/2020 11:33:27','No Salary Startup','Chicago, IL','Product Designer','',
+        'user interface','female','0','0','0','100','0'],
+        ['4/7/2021 11:33:27','','Chicago, IL','','IC4','user experience','female','7','0','143','40','22.7'],
+        ['4/7/2021 11:33:27','twitter','Washington, DC','software engineer','swe II',
+        'data','male','2','2','150','60','0']])
+    levels_etl.s3_bucket._bucket.upload_file(Filename=filename,Key='test_data.csv')
+    return levels_etl
+
 def test_extract_all_locations(requests_mock,levels_etl):
     requests_mock.get('https://www.levels.fyi/js/salaryData.json',json=all_locations)
     test_data=requests.get('https://www.levels.fyi/js/salaryData.json').json()
@@ -45,13 +89,23 @@ def test_extract_all_locations(requests_mock,levels_etl):
                 job['tag'],job['gender'],job['yearsofexperience'],job['yearsatcompany'],job['basesalary'],
                 job['stockgrantvalue'],job['bonus']])
     levels_etl.s3_bucket._bucket.upload_file(Filename=r'job_data.csv',Key='job_data.csv')
-    bucket_file_list=levels_etl.s3_bucket._bucket.objects.prefix('job')
+    bucket_file_list=[obj.key for obj in levels_etl.s3_bucket._bucket.objects.filter(Prefix='job')]
     csv_jobdata=levels_etl.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
     job_data_df=pd.read_csv(StringIO(csv_jobdata))
+    print(bucket_file_list)
     assert bucket_file_list[0]=='job_data.csv'
-    assert job_data_df.shape==
-    assert job_data_df['location'].nunique()==54
+    assert job_data_df.shape==(56,12)
+    assert job_data_df['location'].nunique()==55
     os.remove('job_data.csv')
+
+def test_transform_job_data(levels_etl_with_test_csv_data):
+    key_exp='test_data.csv'
+    levels_etl_with_test_csv_data.transform_job_data(key=key_exp)
+    csv_jobdata=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
+    job_data_df=pd.read_csv(StringIO(csv_jobdata))
+    assert len(job_data_df) == 10
+
+
 
 
 

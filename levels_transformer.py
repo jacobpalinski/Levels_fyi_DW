@@ -11,7 +11,7 @@ class Levels_ETL:
         'Irvine':'California','San Francisco':'California','Seattle':'Washington','Bellevue':'Washington',
         'Redmond':'Washington','San Jose':'California','Sunnyvale':'California','Mountain View':'California',
         'Santa Clara':'California','Palo Alto':'California','Redwood City':'California','Los Gatos':'California',
-        'Cupertino':'California','Chicago':'Illinois','Dallas':'Texas','Miami':'Florida',
+        'Cupertino':'California','Menlo Park':'California','Chicago':'Illinois','Dallas':'Texas','Miami':'Florida',
         'Philadelphia':'Pennsylvania','Pittsburgh':'Pennsylvania','Atlanta':'Georgia','Phoenix':'Arizona',
         'Boston':'Massachusetts','Cambridge':'Massachusetts','Houston':'Texas','Washington':'Distict of Columbia',
         'Arlington':'Virginia','West Mclean':'Virginia','Detroit':'Michigan','Minneapolis':'Minnesota',
@@ -41,13 +41,19 @@ class Levels_ETL:
         # Create Dataframe
         job_data_df=self.s3_bucket.read_csv_to_df(key=key)
         # Convert string integers into integer datatype
-        job_data_df=job_data_df[['years_of_experience','years_at_company',
-        'base_salary','stock','bonus']].astype(int)
+        job_data_df[['years_of_experience','years_at_company',
+        'base_salary','stock','bonus']]=job_data_df[['years_of_experience','years_at_company',
+        'base_salary','stock','bonus']].astype(float)
+        # Drop duplicates
+        job_data_df.drop_duplicates(keep='first',inplace=True)
         # Drop data points with base_salary=0 and stock=0 as they are not useful for analysis
         job_data_df.drop(job_data_df[(job_data_df['base_salary']==0) & (job_data_df['stock']==0)].index,
         inplace=True)
+        # Drop data points with no company and job title as they are not useful for analysis
+        job_data_df.drop(job_data_df[(job_data_df['company']=='') & (job_data_df['title']=='')].index,
+        inplace=True)
         # Translate base_salary,stock and bonus for all data points into figures ending in 000s
-        job_data_df['base_salary']=job_data_df['base_salary']*1000 if job_data_df['base_salary']<10000 else job_data_df['base_salary']
+        job_data_df['base_salary']=(job_data_df['base_salary']).where(job_data_df['base_salary']<10000,job_data_df['base_salary']*1000)
         job_data_df['stock']=job_data_df['stock']*1000 if job_data_df['stock']<10000 else job_data_df['stock']
         job_data_df['bonus']=job_data_df['bonus']*1000 if job_data_df['bonus']<10000 else job_data_df['bonus']
         # Write Dataframe to S3
@@ -73,9 +79,9 @@ class Levels_ETL:
         '''Create csv containing company name, title, specialisation and level associated with each data point'''
         # Create Dataframe
         job_data_df=self.s3_bucket.read_csv_to_df(key=key)
-        job_details_df=job_data_df[['company','specialisation','tag','level']]
+        job_details_df=job_data_df[['company','title','specialisation','level']]
         # Dealing with empty values
-        job_details_df[['company','title','specialisation','level']].replace(r'^\s*$','Not Specified',
+        job_details_df[['specialisation','level']].replace(r'^\s*$','Not Specified',
         inplace=True,regex=True)
         # Replace 'iOS','Android' and Mobile(iOS + Android) specialisation with 'Mobile Development'
         job_details_df.loc[job_details_df['specialisation'].str.contains('iOS',case=False),
@@ -107,10 +113,14 @@ class Levels_ETL:
         'specialisation']='Algorithm'
         job_details_df.loc[job_details_df['specialisation'].str.contains('algorithm',case=False),
         'specialisation']='Algorithm'
-        # Replace 'user experience' and 'user interface' with 'UX/UI'
+        # Replace 'user experience','ux','ui','user interface' with 'UX/UI'
         job_details_df.loc[job_details_df['specialisation'].str.contains('user experience',case=False),
         'specialisation']='UX/UI'
         job_details_df.loc[job_details_df['specialisation'].str.contains('user interface',case=False),
+        'specialisation']='UX/UI'
+        job_details_df.loc[job_details_df['specialisation'].str.contains('ui',case=False),
+        'specialisation']='UX/UI'
+        job_details_df.loc[job_details_df['specialisation'].str.contains('ux',case=False),
         'specialisation']='UX/UI'
         # Title all column values
         job_details_df['company']=job_details_df['company'].str.title()
