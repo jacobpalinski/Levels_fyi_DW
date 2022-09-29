@@ -53,9 +53,9 @@ class Levels_ETL:
         job_data_df.drop(job_data_df[(job_data_df['company']=='') & (job_data_df['title']=='')].index,
         inplace=True)
         # Translate base_salary,stock and bonus for all data points into figures ending in 000s
-        job_data_df['base_salary']=(job_data_df['base_salary']).where(job_data_df['base_salary']<10000,job_data_df['base_salary']*1000)
-        job_data_df['stock']=job_data_df['stock']*1000 if job_data_df['stock']<10000 else job_data_df['stock']
-        job_data_df['bonus']=job_data_df['bonus']*1000 if job_data_df['bonus']<10000 else job_data_df['bonus']
+        job_data_df['base_salary']=(job_data_df['base_salary']*1000).where(job_data_df['base_salary']<10000,job_data_df['base_salary'])
+        job_data_df['stock']=(job_data_df['stock']*1000).where(job_data_df['stock']<10000,job_data_df['stock'])
+        job_data_df['bonus']=(job_data_df['bonus']*1000).where(job_data_df['bonus']<10000,job_data_df['bonus'])
         # Write Dataframe to S3
         self.s3_bucket.write_df_to_s3(job_data_df,'job_data.csv')
     

@@ -48,6 +48,8 @@ def levels_etl_with_test_csv_data(tmpdir_factory,levels_etl):
         'Site Reliability (SRE)','','','','135','5','0'],
         ['10/11/2017 11:33:27','Facebook','Menlo Park, CA','Software Engineer','E5','production','male',
         '11','2','215','100','40'],
+        ['10/11/2017 11:33:27','Facebook','Menlo Park, CA','Software Engineer','E5','production','male',
+        '11','2','215','100','40'],
         ['12/11/2017 11:33:27','spotify','New York, NY','Software Engineer','Engineer 1','fullstack developer','male',
         '4','0','180','37.5','0'],
         ['1/30/2018 11:33:27','Intel','Santa Clara, CA','Software Engineer','grade 9','augmented reality','male',
@@ -74,7 +76,7 @@ def levels_etl_with_test_csv_data(tmpdir_factory,levels_etl):
         ['4/7/2021 11:33:27','twitter','Washington, DC','software engineer','swe II',
         'data','male','2','2','150','60','0']])
     levels_etl.s3_bucket._bucket.upload_file(Filename=filename,Key='test_data.csv')
-    return levels_etl
+    yield levels_etl
 
 def test_extract_all_locations(requests_mock,levels_etl):
     requests_mock.get('https://www.levels.fyi/js/salaryData.json',json=all_locations)
@@ -90,8 +92,8 @@ def test_extract_all_locations(requests_mock,levels_etl):
                 job['stockgrantvalue'],job['bonus']])
     levels_etl.s3_bucket._bucket.upload_file(Filename=r'job_data.csv',Key='job_data.csv')
     bucket_file_list=[obj.key for obj in levels_etl.s3_bucket._bucket.objects.filter(Prefix='job')]
-    csv_jobdata=levels_etl.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
-    job_data_df=pd.read_csv(StringIO(csv_jobdata))
+    jobdata_csv=levels_etl.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
+    job_data_df=pd.read_csv(StringIO(jobdata_csv))
     print(bucket_file_list)
     assert bucket_file_list[0]=='job_data.csv'
     assert job_data_df.shape==(56,12)
@@ -101,9 +103,26 @@ def test_extract_all_locations(requests_mock,levels_etl):
 def test_transform_job_data(levels_etl_with_test_csv_data):
     key_exp='test_data.csv'
     levels_etl_with_test_csv_data.transform_job_data(key=key_exp)
-    csv_jobdata=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
-    job_data_df=pd.read_csv(StringIO(csv_jobdata))
-    assert len(job_data_df) == 10
+    jobdata_csv=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
+    job_data_df=pd.read_csv(StringIO(jobdata_csv))
+    assert list(job_data_df.select_dtypes(include=['float']).columns)==['years_of_experience','years_at_company',
+    'base_salary','stock','bonus']
+    assert job_data_df.duplicated().any()==False
+    assert ((job_data_df['base_salary']==0) & (job_data_df['stock']==0)).any()==False
+    assert ((job_data_df['company']=='') & (job_data_df['title']=='')).any()==False
+    assert job_data_df[job_data_df['company']=='Google']['base_salary'].values[0]==120000.00
+    assert job_data_df[job_data_df['company']=='Google']['stock'].values[0]==40000.00
+    assert job_data_df[job_data_df['company']=='Google']['bonus'].values[0]==15000.00
+    assert job_data_df[job_data_df['company']=='Apple']['base_salary'].values[0]==90000.00
+    assert job_data_df[job_data_df['company']=='Apple']['stock'].values[0]==30000.00
+    assert job_data_df[job_data_df['company']=='Apple']['bonus'].values[0]==20000.00
+
+def test_transform_dates(levels_etl_with_test_csv_data):
+    key_exp='test_data.csv'
+    levels_etl_with_test_csv_data.transform_dates(key=key_exp)
+    date_csv=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='date.csv').get().get('Body').read().decode('UTF-8')
+    date_df=pd.read_csv(StringIO(date_csv))
+
 
 
 
