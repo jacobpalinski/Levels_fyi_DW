@@ -63,9 +63,12 @@ class Levels_ETL:
         '''Transform timestamp from job_data.csv into date_csv with date_key, year, month and quarter'''
         # Create Dataframe
         job_data_df=self.s3_bucket.read_csv_to_df(key=key)
-        date_df=job_data_df['date']
-        # Extract date from timestamp in date column
-        date_df['date']=pd.to_datetime(date_df['date'],format='%y%m%d')
+        date_df=pd.Series(job_data_df['date'],dtype='string').to_frame()
+        # Extract date from timestamp in date column and convert to %Y-%m-%d format for data warehouse
+        date_df['date']=date_df['date'].str.split(' ').str[0]
+        date_df['date']=pd.to_datetime(date_df['date'],format='%m/%d/%Y')
+        date_df['date']=date_df['date'].dt.strftime('%Y-%m-%d')
+        date_df['date']=pd.to_datetime(date_df['date'],format='%Y-%m-%d')
         # Extract year from date
         date_df['year']=date_df['date'].dt.year
         # Extract month from date

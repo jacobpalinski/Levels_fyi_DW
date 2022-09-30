@@ -78,10 +78,11 @@ def levels_etl_with_test_csv_data(tmpdir_factory,levels_etl):
     levels_etl.s3_bucket._bucket.upload_file(Filename=filename,Key='test_data.csv')
     yield levels_etl
 
-def test_extract_all_locations(requests_mock,levels_etl):
+def test_extract_all_locations(tmpdir_factory,requests_mock,levels_etl):
     requests_mock.get('https://www.levels.fyi/js/salaryData.json',json=all_locations)
     test_data=requests.get('https://www.levels.fyi/js/salaryData.json').json()
-    with open('job_data.csv','w',encoding='UTF-8',newline='') as file:
+    filename=str(tmpdir_factory.mktemp('data').join('job_data.csv'))
+    with open(filename,'w',encoding='UTF-8',newline='') as file:
         writer=csv.writer(file)
         writer.writerow(['date','company','location','title','level','specialisation','gender',
         'years_of_experience','years_at_company','base_salary','stock','bonus'])
@@ -90,7 +91,7 @@ def test_extract_all_locations(requests_mock,levels_etl):
                 writer.writerow([job['timestamp'],job['company'],job['location'],job['title'],job['level'],
                 job['tag'],job['gender'],job['yearsofexperience'],job['yearsatcompany'],job['basesalary'],
                 job['stockgrantvalue'],job['bonus']])
-    levels_etl.s3_bucket._bucket.upload_file(Filename=r'job_data.csv',Key='job_data.csv')
+    levels_etl.s3_bucket._bucket.upload_file(Filename=filename,Key='job_data.csv')
     bucket_file_list=[obj.key for obj in levels_etl.s3_bucket._bucket.objects.filter(Prefix='job')]
     jobdata_csv=levels_etl.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
     job_data_df=pd.read_csv(StringIO(jobdata_csv))
@@ -98,7 +99,6 @@ def test_extract_all_locations(requests_mock,levels_etl):
     assert bucket_file_list[0]=='job_data.csv'
     assert job_data_df.shape==(56,12)
     assert job_data_df['location'].nunique()==55
-    os.remove('job_data.csv')
 
 def test_transform_job_data(levels_etl_with_test_csv_data):
     key_exp='test_data.csv'
@@ -122,6 +122,23 @@ def test_transform_dates(levels_etl_with_test_csv_data):
     levels_etl_with_test_csv_data.transform_dates(key=key_exp)
     date_csv=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='date.csv').get().get('Body').read().decode('UTF-8')
     date_df=pd.read_csv(StringIO(date_csv))
+    assert list(date_df.columns)==['date','year','month','quarter']
+    assert date_df['date'].tolist()==['2017-01-01','2017-04-20','2017-04-20','2017-07-15',
+    '2017-10-11','2017-10-11','2017-12-11','2018-01-30','2018-01-30','2018-03-30','2018-04-07','2018-05-09',
+    '2018-11-11','2019-04-07','2019-04-07','2019-04-07','2020-09-13','2021-04-07','2021-04-07']
+    assert date_df['year'].tolist()==[2017,2017,2017,2017,2017,2017,2017,2018,2018,2018,2018,2018,2018,
+    2019,2019,2019,2020,2021,2021]
+    assert date_df['month'].tolist()==[1,4,4,7,10,10,12,1,1,3,4,5,11,4,4,4,9,4,4]
+    assert date_df['quarter'].tolist()==[1,2,2,3,4,4,4,1,1,1,2,2,4,2,2,2,3,2,2]
+
+def test_transform_job_details(levels_etl_with_test_csv_data):
+    key_exp='test_data.csv'
+    levels_etl_with_test_csv_data.transform_dates(key=key_exp)
+    job_details_csv=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='job_details.csv').get().get('Body').read().decode('UTF-8')
+    date_df=pd.read_csv(StringIO(job_details_csv))
+    assert 
+
+
 
 
 
