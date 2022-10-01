@@ -133,10 +133,37 @@ def test_transform_dates(levels_etl_with_test_csv_data):
 
 def test_transform_job_details(levels_etl_with_test_csv_data):
     key_exp='test_data.csv'
-    levels_etl_with_test_csv_data.transform_dates(key=key_exp)
+    levels_etl_with_test_csv_data.transform_job_details(key=key_exp)
     job_details_csv=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='job_details.csv').get().get('Body').read().decode('UTF-8')
-    date_df=pd.read_csv(StringIO(job_details_csv))
-    assert 
+    job_details_df=pd.read_csv(StringIO(job_details_csv))
+    print(job_details_df[['company','level','specialisation']])
+    assert job_details_df.isnull().values.any()==False
+    assert job_details_df['specialisation'].str.contains('iOS').all()==False
+    assert job_details_df['specialisation'].str.contains('android').all()==False
+    assert job_details_df['specialisation'].str.contains('Site Reliability (SRE)').all()==False
+    assert job_details_df['specialisation'].str.contains('production').all()==False
+    assert job_details_df['specialisation'].str.contains('fullstack').all()==False
+    assert job_details_df['specialisation'].str.contains('augmented reality').all()==False
+    assert job_details_df['specialisation'].str.contains('virtual reality').all()==False
+    assert job_details_df['specialisation'].str.contains('Web Development (front-end)').all()==False
+    assert job_details_df['specialisation'].str.contains('backend').all()==False
+    assert job_details_df['specialisation'].str.contains('algorithm').all()==False
+    assert job_details_df['specialisation'].str.contains('algorithms').all()==False
+    assert job_details_df['specialisation'].str.contains('user experience').all()==False
+    assert job_details_df['specialisation'].str.contains('user interface').all()==False
+    assert job_details_df['specialisation'].str.contains('ui').all()==False
+    assert job_details_df['specialisation'].str.contains('ux').all()==False
+    assert job_details_df['company'].str.istitle().all()==True
+    assert job_details_df['title'].str.istitle().all()==True
+    assert job_details_df['specialisation'].str.istitle().all()==True
+
+def test_transform_offer_recipient(levels_etl_with_test_csv_data):
+    key_exp='test_data.csv'
+    levels_etl_with_test_csv_data.transform_offer_recipient(key=key_exp)
+    offer_recipient_csv=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='offer_recipient.csv').get().get('Body').read().decode('UTF-8')
+    offer_recipient_df=pd.read_csv(StringIO(offer_recipient_csv))
+    assert offer_recipient_df.isnull().values.any()==False
+    assert offer_recipient_df['gender'].str.istitle().all()==True
 
 
 

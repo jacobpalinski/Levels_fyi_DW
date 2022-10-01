@@ -83,9 +83,8 @@ class Levels_ETL:
         # Create Dataframe
         job_data_df=self.s3_bucket.read_csv_to_df(key=key)
         job_details_df=job_data_df[['company','title','specialisation','level']]
-        # Dealing with empty values
-        job_details_df[['specialisation','level']].replace(r'^\s*$','Not Specified',
-        inplace=True,regex=True)
+        # Replace null values with 'Not Specified'
+        job_details_df.fillna('Not Specified',inplace=True,axis=1)
         # Replace 'iOS','Android' and Mobile(iOS + Android) specialisation with 'Mobile Development'
         job_details_df.loc[job_details_df['specialisation'].str.contains('iOS',case=False),
         'specialisation']='Mobile Development'
@@ -125,11 +124,10 @@ class Levels_ETL:
         'specialisation']='UX/UI'
         job_details_df.loc[job_details_df['specialisation'].str.contains('ux',case=False),
         'specialisation']='UX/UI'
-        # Title all column values
+        # Title all column values except level
         job_details_df['company']=job_details_df['company'].str.title()
         job_details_df['title']=job_details_df['title'].str.title()
         job_details_df['specialisation']=job_details_df['specialisation'].str.title()
-        job_details_df['level']=job_details_df['level'].str.title()
         # Write Dataframe to S3
         self.s3_bucket.write_df_to_s3(job_details_df,'job_details.csv')
 
@@ -138,9 +136,8 @@ class Levels_ETL:
         # Create Dataframe
         job_data_df=self.s3_bucket.read_csv_to_df(key=key)
         offer_recipient_df=job_data_df[['gender','years_of_experience','years_at_company']]
-        # Dealing with empty values
-        offer_recipient_df[['gender','years_of_experience','years_at_company']].replace(r'^\s*$','Not Specified',
-        inplace=True,regex=True)
+        # # Replace null values with 'Not Specified'
+        offer_recipient_df.fillna('Not Specified',inplace=True,axis=1)
         # Title gender values
         offer_recipient_df['gender']=offer_recipient_df['gender'].str.title()
         # Write Dataframe to S3
