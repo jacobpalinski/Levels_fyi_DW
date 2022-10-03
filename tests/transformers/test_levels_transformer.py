@@ -165,6 +165,19 @@ def test_transform_offer_recipient(levels_etl_with_test_csv_data):
     assert offer_recipient_df.isnull().values.any()==False
     assert offer_recipient_df['gender'].str.istitle().all()==True
 
+def test_transform_locations(levels_etl_with_test_csv_data):
+    key_exp='test_data.csv'
+    levels_etl_with_test_csv_data.transform_locations(key=key_exp)
+    locations_csv=levels_etl_with_test_csv_data.s3_bucket._bucket.Object(key='locations.csv').get().get('Body').read().decode('UTF-8')
+    locations_df=pd.read_csv(StringIO(locations_csv))
+    assert list(locations_df.columns)==['city','state']
+    assert locations_df['city'].tolist()==['Sunnyvale','Austin','Bellevue','Cambridge',
+    'Menlo Park','Menlo Park','New York','Santa Clara','Santa Clara','Denver','San Francisco','New York',
+    'New York','Chicago','New York','Salt Lake City','Chicago','Chicago','Washington']
+    assert locations_df['state'].tolist()==['California','Texas','Washington','Massachusetts','California',
+    'California','New York','California','California','Colorado','California','New York','New York',
+    'Illinois','New York','Utah','Illinois','Illinois','District of Columbia']
+
 
 
 

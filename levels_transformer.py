@@ -13,7 +13,7 @@ class Levels_ETL:
         'Santa Clara':'California','Palo Alto':'California','Redwood City':'California','Los Gatos':'California',
         'Cupertino':'California','Menlo Park':'California','Chicago':'Illinois','Dallas':'Texas','Miami':'Florida',
         'Philadelphia':'Pennsylvania','Pittsburgh':'Pennsylvania','Atlanta':'Georgia','Phoenix':'Arizona',
-        'Boston':'Massachusetts','Cambridge':'Massachusetts','Houston':'Texas','Washington':'Distict of Columbia',
+        'Boston':'Massachusetts','Cambridge':'Massachusetts','Houston':'Texas','Washington':'District of Columbia',
         'Arlington':'Virginia','West Mclean':'Virginia','Detroit':'Michigan','Minneapolis':'Minnesota',
         'San Diego':'California','Tampa':'Florida','Denver':'Colorado','Baltimore':'Maryland',
         'Charlotte':'North Carolina','Orlando':'Florida','San Antonio':'Texas','Portland':'Oregon',
@@ -147,11 +147,13 @@ class Levels_ETL:
         '''Create csv containing city and state information'''
         # Create Dataframe
         job_data_df=self.s3_bucket.read_csv_to_df(key=key)
-        locations_df=job_data_df['location']
-        # Create City Column
-        locations_df['city']=locations_df['location'].split(',')[0]
+        locations_df=pd.Series(job_data_df['location'],dtype='string').to_frame()
+        # New Dataframe with split value columns
+        location_split_df=locations_df['location'].str.split(',',expand=True)
+        # Create city column
+        locations_df['city']=location_split_df[0]
         # Create State Column
-        locations_df['state']=self.locations.get(locations_df['city'])
+        locations_df['state']=locations_df['city'].map(self.locations)
         # Drop location since longer needed
         locations_df.drop('location',axis=1,inplace=True)
         # Write Dataframe to S3
