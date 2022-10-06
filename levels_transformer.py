@@ -5,6 +5,16 @@ from s3 import S3BucketConnector
 from io import StringIO
 from datetime import datetime
 
+class ETL_Interface:
+    def extract(self,source,s3_key):
+        pass
+
+    def transform(self,s3_key):
+        pass
+
+    def load(self,redshift_warehouse):
+        pass
+
 class Levels_ETL:
     def __init__(self,s3_bucket=S3BucketConnector):
         self.locations={'New York':'New York','Jersey City':'New Jersey','Los Angeles':'California',
