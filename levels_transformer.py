@@ -2,8 +2,10 @@ import requests
 import csv
 import pandas as pd
 from s3 import S3BucketConnector
+from tax_foundation_spider import TaxFoundationSpider
 from io import StringIO
 from datetime import datetime
+from scrapy.crawler import CrawlerProcess
 
 class ETL_Interface:
     def extract(self,source,s3_key):
@@ -15,7 +17,7 @@ class ETL_Interface:
     def load(self,redshift_warehouse):
         pass
 
-class Levels_ETL:
+class Levels_ETL(ETL_Interface):
     def __init__(self,s3_bucket=S3BucketConnector):
         self.locations={'New York':'New York','Jersey City':'New Jersey','Los Angeles':'California',
         'Irvine':'California','San Francisco':'California','Seattle':'Washington','Bellevue':'Washington',
@@ -169,6 +171,88 @@ class Levels_ETL:
         # Write Dataframe to S3
         self.s3_bucket.write_df_to_s3(locations_df,'locations.csv')
 
+class Taxes_ETL:
+    def extract(self,source,s3_key):
+        # Crawl Data from Tax Foundation Spreadsheet
+        process=CrawlerProcess(settings={
+        'FEED_URI':'US_State_Tax_Rates_2017-2021.csv',
+        'FEED_FORMAT':'csv'})
+        process.crawl(TaxFoundationSpider)
+        process.start()
+    
+    def transform_state_tax_rates(self,key='US_State_Tax_Rates_2017-2021'):
+        state_taxes_df=self.s3_bucket.read_csv_to_df(key=key)
+        # Remove % from rate and change to float datatype
+        state_taxes_df['state'].replace('%','',inplace=True)
+        state_taxes_df['state']=pd.to_numeric(state_taxes_df['state'],downcast='float')
+        # Remove $ and , from bracket figures and convert to integer datatype
+        state_taxes_df['bracket'].replace(['$',','],'',inplace=True)
+        state_taxes_df['bracket']=pd.to_numeric(state_taxes_df['bracket'],downcast='int')
+        # Delete rows with null rate and bracket columns
+        state_taxes_df.dropna(axis=1,how='all',subset=['rate','bracket'],inplace=True)
+        # Rows with no state taxes, replace rate and bracket columns with 0
+        state_taxes_df[['rate','bracket']].replace({'none':0,'n.a':0},inplace=True)
+        # Remove bracketed letters from rows in the state column
+        state_taxes_df['state'].replace('\(.*?\)','',inplace=True,regex=True)
+        # Change abbreviated state names to full names for data from 2017-2019
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Ariz.',case=False),
+        'state']='Arizona'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Calif.',case=False),
+        'state']='California'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Colo.',case=False),
+        'state']='Colorado'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Conn.',case=False),
+        'state']='Connecticut'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Fla.',case=False),
+        'state']='Florida'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Ga.',case=False),
+        'state']='Georgia'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Ill.',case=False),
+        'state']='Illinois'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Kans.',case=False),
+        'state']='Kansas'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Md.',case=False),
+        'state']='Maryland'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Mass.',case=False),
+        'state']='Massachusetts'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Mich.',case=False),
+        'state']='Michigan'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Minn.',case=False),
+        'state']='Minneapolis'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Nev.',case=False),
+        'state']='Nevada'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('N.J.',case=False),
+        'state']='New Jersey'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('N.Y.',case=False),
+        'state']='New York'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('N.C.',case=False),
+        'state']='North Carolina'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Ore.',case=False),
+        'state']='Oregon'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Pa.',case=False),
+        'state']='Pennsylvania'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Tenn.',case=False),
+        'state']='Tennessee'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Tex.',case=False),
+        'state']='Texas'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Va.',case=False),
+        'state']='Virginia'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Wash.',case=False),
+        'state']='Washington'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('Wis.',case=False),
+        'state']='Wisconsin'
+        state_taxes_df.loc[state_taxes_df['state'].str.contains('D.C.',case=False),
+        'state']='District of Columbia'
+        # Ensure every row has a state string
+        state_taxes_df['state'].fillna(method='ffill',inplace=True)
+        
+
+
+
+
+
+
+        
 
 
 

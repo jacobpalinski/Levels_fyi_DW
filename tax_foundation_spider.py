@@ -32,7 +32,7 @@ class TaxFoundationSpider(scrapy.Spider):
             iframe=driver.find_element(By.XPATH,'//iframe')
             driver.switch_to.frame(iframe)
             response_obj=Selector(text=driver.page_source)
-            rows=response_obj.xpath('/html/body/div/div/div/table/tbody/tr[position()>=4 and position()<267]')
+            rows=response_obj.xpath('/html/body/div/div/div/table/tbody/tr[position()>=3 and position()<267]')
             for row in rows:
                 yield{
                     'year': 2023-tab_number,

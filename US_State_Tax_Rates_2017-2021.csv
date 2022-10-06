@@ -1,4 +1,5 @@
 year,state,rate,bracket
+2021,,,
 2021,Alabama,2.00%,$0
 2021,"(a, b, c)",4.00%,$500
 2021,,5.00%,"$3,000"
@@ -262,6 +263,7 @@ year,state,rate,bracket
 2021,,,
 2021,,,
 2021,"(a) Local income taxes are excluded. Eleven states have county- or city-level income taxes; the average rates expressed as a percentage of AGI within each jurisdiction are: 0.10% in Alabama; 0.36% in Indiana; 0.11% in Iowa; 1.29% in Kentucky; 2.18% in Maryland; 0.17% in Michigan; 0.22% in Missouri; 1.47% in New York; 1.59% in Ohio; and 1.15% in Pennsylvania. Data are not available in Delaware, where Wilmington imposes a municipal income tax. In California, Colorado, Kansas, New Jersey, Oregon, and West Virginia, some jurisdictions have payroll taxes, flat-rate wage taxes, or interest and dividend income taxes. See Jared Walczak, “Local Income Taxes in 2019,” Tax Foundation, July 30, 2019, https://taxfoundation.org/local-income-taxes-2019/.",,
+2020,Alabama,2.00%,$0
 2020,"(a, b, c)",4.00%,$500
 2020,,5.00%,"$3,000"
 2020,,,
@@ -525,6 +527,7 @@ year,state,rate,bracket
 2020,"(a) Local income taxes are excluded. Eleven states have county- or city-level income taxes; the average rates expressed as a percentage of AGI within each jurisdiction are: 0.10% in Alabama; 0.19% in Delaware; 0.73% in Indiana; 0.11% in Iowa; 1.29% in Kentucky; 2.28% in Maryland; 0.17% in Michigan; 0.23% in Missouri; 1.49% in New York; 1.56% in Ohio; and 1.21% in Pennsylvania. In California, Colorado, Kansas, New Jersey, Oregon, and West Virginia, some jurisdictions have payroll taxes, flat-rate wage taxes, or interest and dividend income taxes. See Jared Walczak, “Local Income Taxes in 2019,” Tax Foundation, July 30, 2019, https://taxfoundation.org/local-income-taxes-2019/.",,
 2020,(b) These states allow some or all of federal income tax paid to be deducted from state taxable income.,,
 2020,"(c) For single taxpayers with AGI below $23,000, the standard deduction is $2,500. This standard deduction amount is reduced by $25 for every additional $500 of AGI, not to fall below $2,000. For Married Filing Joint (MFJ) taxpayers with AGI below $23,000, the standard deduction is $7,500. This standard deduction amount is reduced by $175 for every additional $500, not to fall below $4,000. For all taxpayers claiming a dependent with AGI of $20,000 or less, the dependent exemption is $1,000. This amount is reduced to $500 per dependent for taxpayers with AGI above $20,000 and equal to or less than $100,000. For taxpayers with over $100,000 AGI, the dependent exemption is $300 per dependent.",,
+2019,Ala.,2.00%,$0
 2019,"(b, f, gg)",4.00%,$500
 2019,,5.00%,"$3,000"
 2019,,,
@@ -788,6 +791,7 @@ year,state,rate,bracket
 2019,(e) Bracket levels adjusted for inflation each year. Release dates for tax bracket inflation adjustments vary by state and may fall after the end of the applicable tax year.,,
 2019,(f) These states allow some or all of federal income tax paid to be deducted from state taxable income.,,
 2019,"(g) Ohio's personal and dependent exemptions are $2,350 for an AGI of $40,000 or less, $2,100 if AGI is between $40,001 and $80,000, and $1,850 if AGI is $80,000 or above.",,
+2018,State,Rates,Brackets
 2018,Ala.,2.00%,$0
 2018,"(b, f, gg)",4.00%,$500
 2018,,5.00%,"$3,000"
@@ -1051,6 +1055,7 @@ year,state,rate,bracket
 2018,,8.75%,"$350,000"
 2018,,8.95%,"$1,000,000"
 2018,,,
+2017,Ala.,2.00%,$0
 2017,"(b, f)",4.00%,$500
 2017,,5.00%,"$3,000"
 2017,,,
