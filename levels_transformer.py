@@ -245,7 +245,19 @@ class Taxes_ETL:
         'state']='District of Columbia'
         # Ensure every row has a state string
         state_taxes_df['state'].fillna(method='ffill',inplace=True)
-        
+        # Replace Wyoming rows except first with District of Columbia
+        condition=(state_taxes_df['state']=='Wyoming') & (state_taxes_df['rate']>0)
+        state_taxes_df.loc[condition,'state']='District of Columbia'
+        # Remove rows not containing the states specified in Levels_ETL.locations
+        relevant_states=['New York','New Jersey','California','Washington','Illinois','Texas',
+        'Florida','Pennsylvania','Georgia','Arizona','Massachusetts','District of Columbia','Virginia',
+        'Michigan','Minnesota','Colorado','Maryland','North Carolina','Oregon','Nevada','Ohio','Kansas',
+        'Indiana','Tennessee','Wisconsin','Utah','Connecticut']
+        state_taxes_df=state_taxes_df[state_taxes_df['state'].isin(relevant_states)]
+
+
+
+
 
 
 

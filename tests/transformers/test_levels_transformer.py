@@ -78,27 +78,28 @@ def levels_etl_with_test_csv_data(tmpdir_factory,levels_etl):
     levels_etl.s3_bucket._bucket.upload_file(Filename=filename,Key='test_data.csv')
     yield levels_etl
 
-def test_extract_all_locations(tmpdir_factory,requests_mock,levels_etl):
-    requests_mock.get('https://www.levels.fyi/js/salaryData.json',json=all_locations)
-    test_data=requests.get('https://www.levels.fyi/js/salaryData.json').json()
-    filename=str(tmpdir_factory.mktemp('data').join('job_data.csv'))
-    with open(filename,'w',encoding='UTF-8',newline='') as file:
-        writer=csv.writer(file)
-        writer.writerow(['date','company','location','title','level','specialisation','gender',
-        'years_of_experience','years_at_company','base_salary','stock','bonus'])
-        for job in test_data:
-            if levels_etl.locations.get(job['location'].split(',')[0]):
-                writer.writerow([job['timestamp'],job['company'],job['location'],job['title'],job['level'],
-                job['tag'],job['gender'],job['yearsofexperience'],job['yearsatcompany'],job['basesalary'],
-                job['stockgrantvalue'],job['bonus']])
-    levels_etl.s3_bucket._bucket.upload_file(Filename=filename,Key='job_data.csv')
-    bucket_file_list=[obj.key for obj in levels_etl.s3_bucket._bucket.objects.filter(Prefix='job')]
-    jobdata_csv=levels_etl.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
-    job_data_df=pd.read_csv(StringIO(jobdata_csv))
-    print(bucket_file_list)
-    assert bucket_file_list[0]=='job_data.csv'
-    assert job_data_df.shape==(56,12)
-    assert job_data_df['location'].nunique()==55
+class Test_Levels_ETL:
+    def test_extract_all_locations(self,tmpdir_factory,requests_mock,levels_etl):
+        requests_mock.get('https://www.levels.fyi/js/salaryData.json',json=all_locations)
+        test_data=requests.get('https://www.levels.fyi/js/salaryData.json').json()
+        filename=str(tmpdir_factory.mktemp('data').join('job_data.csv'))
+        with open(filename,'w',encoding='UTF-8',newline='') as file:
+            writer=csv.writer(file)
+            writer.writerow(['date','company','location','title','level','specialisation','gender',
+            'years_of_experience','years_at_company','base_salary','stock','bonus'])
+            for job in test_data:
+                if levels_etl.locations.get(job['location'].split(',')[0]):
+                    writer.writerow([job['timestamp'],job['company'],job['location'],job['title'],job['level'],
+                    job['tag'],job['gender'],job['yearsofexperience'],job['yearsatcompany'],job['basesalary'],
+                    job['stockgrantvalue'],job['bonus']])
+        levels_etl.s3_bucket._bucket.upload_file(Filename=filename,Key='job_data.csv')
+        bucket_file_list=[obj.key for obj in levels_etl.s3_bucket._bucket.objects.filter(Prefix='job')]
+        jobdata_csv=levels_etl.s3_bucket._bucket.Object(key='job_data.csv').get().get('Body').read().decode('UTF-8')
+        job_data_df=pd.read_csv(StringIO(jobdata_csv))
+        print(bucket_file_list)
+        assert bucket_file_list[0]=='job_data.csv'
+        assert job_data_df.shape==(56,12)
+        assert job_data_df['location'].nunique()==55
 
 def test_transform_job_data(levels_etl_with_test_csv_data):
     key_exp='test_data.csv'
@@ -177,6 +178,8 @@ def test_transform_locations(levels_etl_with_test_csv_data):
     assert locations_df['state'].tolist()==['California','Texas','Washington','Massachusetts','California',
     'California','New York','California','California','Colorado','California','New York','New York',
     'Illinois','New York','Utah','Illinois','Illinois','District of Columbia']
+
+
 
 
 
